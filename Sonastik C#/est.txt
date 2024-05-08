@@ -1,0 +1,15 @@
+﻿maja
+raamat
+päike
+vesi
+sõber
+mets
+kool
+auto
+lill
+rahu
+tee
+mesilane
+kurk
+sugi
+lumi
