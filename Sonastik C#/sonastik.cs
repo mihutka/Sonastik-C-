@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 class Program
 {
     static void Main()
     {
-        Dictionary<string, string> rusEstDictionary = LoadDictionary("rus.txt", "est.txt");
-        Dictionary<string, string> estRusDictionary = LoadDictionary("est.txt", "rus.txt");
+        Dictionary<string, string> rusEstDictionary = Translator.ReadRussianToEstonianDictionary();
+        Dictionary<string, string> estRusDictionary = Translator.ReadEstonianToRussianDictionary();
 
         while (true)
         {
@@ -18,7 +15,6 @@ class Program
             Console.WriteLine("2. Перевод слов с эстонского на русский");
             Console.WriteLine("3. Добавление слов в словарь");
             Console.WriteLine("4. Игра 'Проверка знаний'");
-            Console.WriteLine("5. Прослушивание слова (не реализовано в C#)");
             Console.WriteLine("6. Выход из программы");
             int choice = Convert.ToInt32(Console.ReadLine());
 
@@ -31,7 +27,10 @@ class Program
                     TranslateWord(estRusDictionary, "Введите слово на эстонском: ", "Перевод на русский: ");
                     break;
                 case 3:
-                    AddWordsToDictionary("Введите слово на русском: ", "Введите слово на эстонском: ", rusEstDictionary, estRusDictionary);
+                    AddWordsToDictionary(rusEstDictionary, estRusDictionary);
+                    // Перезагрузка словарей после добавления новых слов
+                    rusEstDictionary = Translator.ReadRussianToEstonianDictionary();
+                    estRusDictionary = Translator.ReadEstonianToRussianDictionary();
                     break;
                 case 4:
                     TestKnowledge(rusEstDictionary);
@@ -45,43 +44,38 @@ class Program
         }
     }
 
-    static Dictionary<string, string> LoadDictionary(string file1, string file2)
-    {
-        string[] words1 = File.ReadAllLines(file1, Encoding.UTF8);
-        string[] words2 = File.ReadAllLines(file2, Encoding.UTF8);
-        return words1.Zip(words2, (w1, w2) => new { Key = w1.Trim().ToLower(), Value = w2.Trim().ToLower() })
-                    .ToDictionary(pair => pair.Key, pair => pair.Value);
-    }
-
     static void TranslateWord(Dictionary<string, string> dictionary, string inputMessage, string outputMessage)
     {
         Console.WriteLine(inputMessage);
         string word = Console.ReadLine().ToLower().Trim();
-        string translation = dictionary.GetValueOrDefault(word, "Перевод не найден, попробуйте еще раз");
-
-        if (translation == "Перевод не найден, попробуйте еще раз")
-        {
-            Console.WriteLine(translation);
-            AddWordsToDictionary("Введите слово на русском: ", "Введите слово на эстонском: ", dictionary, dictionary);
-        }
-        else
+        if (dictionary.TryGetValue(word, out string translation))
         {
             Console.WriteLine($"{outputMessage} {translation}");
         }
+        else
+        {
+            Console.WriteLine("Перевод не найден, попробуйте еще раз.");
+        }
     }
 
-    static void AddWordsToDictionary(string message1, string message2, Dictionary<string, string> dic1, Dictionary<string, string> dic2)
+    static void AddWordsToDictionary(Dictionary<string, string> rusEstDictionary, Dictionary<string, string> estRusDictionary)
     {
-        Console.WriteLine(message1);
-        string word1 = Console.ReadLine().ToLower().Trim();
-        Console.WriteLine(message2);
-        string word2 = Console.ReadLine().ToLower().Trim();
+        Console.WriteLine("Введите слово на русском:");
+        string russianWord = Console.ReadLine().ToLower().Trim();
+        Console.WriteLine("Введите слово на эстонском:");
+        string estonianWord = Console.ReadLine().ToLower().Trim();
 
-        if (!dic1.ContainsKey(word1))
+        if (!rusEstDictionary.ContainsKey(russianWord))
         {
-            dic1[word1] = word2;
-            File.AppendAllText("rus.txt", word1 + "\n", Encoding.UTF8);
-            File.AppendAllText("est.txt", word2 + "\n", Encoding.UTF8);
+            Translator.AddWordToRussianDictionary(russianWord);
+            Translator.AddWordToEstonianDictionary(estonianWord);
+            rusEstDictionary[russianWord] = estonianWord;
+            estRusDictionary[estonianWord] = russianWord;
+            Console.WriteLine("Слово успешно добавлено.");
+        }
+        else
+        {
+            Console.WriteLine("Слово уже существует в словаре.");
         }
     }
 
